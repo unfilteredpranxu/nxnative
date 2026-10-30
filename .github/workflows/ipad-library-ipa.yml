@@ -1,0 +1,81 @@
+name: iPad Library - unsigned IPA (M1)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/ipad-rom-library-m1
+    paths:
+      - "ios-library/**"
+      - ".github/workflows/ipad-library-ipa.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ipad-library-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ipa:
+    runs-on: xcode-27
+    timeout-minutes: 35
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+    steps:
+      - name: Checkout nxnative fork
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcodebuild -showsdks | grep iphoneos
+          test -f ios-library/project.yml
+          test -f ios-library/Sources/NXNativeLibraryApp.swift
+          test -f ios-library/Sources/ROMStore.swift
+
+      - name: Install XcodeGen
+        shell: bash
+        run: |
+          command -v xcodegen || brew install xcodegen
+
+      - name: Generate and compile iPad app
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd ios-library
+          xcodegen generate --spec project.yml
+          xcodebuild \
+            -project NXNativeLibrary.xcodeproj \
+            -scheme NXNativeLibrary \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/nxnative-library" \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee "$RUNNER_TEMP/ipad-build.log"
+          test -d "$RUNNER_TEMP/nxnative-library/Build/Products/Release-iphoneos/NXNativeLibrary.app"
+
+      - name: Package unsigned IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          ditto "$RUNNER_TEMP/nxnative-library/Build/Products/Release-iphoneos/NXNativeLibrary.app" \
+            "$RUNNER_TEMP/ipa/Payload/NXNativeLibrary.app"
+          cd "$RUNNER_TEMP/ipa"
+          zip -qry "$GITHUB_WORKSPACE/NXNative-Library-unsigned.ipa" Payload
+          unzip -l "$GITHUB_WORKSPACE/NXNative-Library-unsigned.ipa" | grep 'Payload/NXNativeLibrary.app/NXNativeLibrary$'
+          test -s "$GITHUB_WORKSPACE/NXNative-Library-unsigned.ipa"
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: NXNative-Library-unsigned-IPA
+          path: NXNative-Library-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 7

@@ -1,0 +1,46 @@
+name: NXNativeLibrary
+options:
+  bundleIdPrefix: io.github.unfilteredpranxu
+  deploymentTarget:
+    iOS: "26.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "2"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: ""
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  NXNativeLibrary:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: NXNative Library
+        UILaunchStoryboardName: ""
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.unfilteredpranxu.nxnative.library
+        PRODUCT_NAME: NXNativeLibrary
+        GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+schemes:
+  NXNativeLibrary:
+    build:
+      targets:
+        NXNativeLibrary: all
+    run:
+      config: Debug
+    archive:
+      config: Release
